@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logística Inteligente - Mavia & Vihures</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>🚀 Control de Rutas Inteligente</h2>
+
+  <!-- Sección de Configuración -->
+  <div class="config-ubicacion">
+    <div class="campo">
+      <label>📍 Punto de Salida (Local):</label>
+      <input type="text" id="autocomplete-salida" placeholder="Dirección del negocio..." value="Carrera 6 #17a-11, Roldanillo">
+    </div>
+  </div>
+
+  <div class="config-ubicacion row">
+    <div class="campo">
+      <label>País:</label>
+      <select id="pais">
+        <option value="Colombia" selected>Colombia</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label>Ciudad:</label>
+      <input type="text" id="ciudad" value="Roldanillo">
+    </div>
+  </div>
+
+  <!-- Entrada de Direcciones -->
+  <p class="instrucciones">Escribe las direcciones de clientes (una por línea):</p>
+  <textarea id="direcciones" placeholder="Carrera 7 #10-20&#10;Calle 5 #4-15"></textarea>
+  
+  <div class="acciones">
+    <button class="btn-optimizar" onclick="calcularRuta()">🚀 Optimizar y Empezar</button>
+    <button class="btn-gps" onclick="centrarEnUsuario()">📍 Mi Ubicación</button>
+  </div>
+
+  <!-- Mapa -->
+  <div id="map"></div>
+
+  <!-- Lista Dinámica de Pedidos -->
+  <div id="lista-pedidos-contenedor">
+    <h3>📦 Pedidos Pendientes</h3>
+    <ul id="lista-pedidos">
+      <!-- Se llena automáticamente al optimizar -->
+    </ul>
+  </div>
+  
+  <!-- Panel de Instrucciones -->
+  <div id="panel-instrucciones">
+    <h3>Indicaciones de Giro</h3>
+    <div id="indicaciones-geometria"></div>
+  </div>
+</div>
+
+<!-- Librería de Google Maps con Places para el autocompletado -->
+<script src="script.js"></script>
+<script async
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7RcLs2HPeMEeGeG53yWaDlZZCQloTilQ&libraries=places&callback=initMap">
+</script>
+
+</body>
+</html>
