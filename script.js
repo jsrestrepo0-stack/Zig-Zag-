@@ -33,12 +33,18 @@ function initMap() {
 function activarRastreoGPS() {
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition((position) => {
-      const miPos = { lat: position.coords.latitude, lng: position.coords.longitude };
+      const miPos = { 
+        lat: position.coords.latitude, 
+        lng: position.coords.longitude 
+      };
       
+      // Centrar el mapa automáticamente la primera vez que obtiene la posición
       if (!marcadorUsuario) {
+        map.setCenter(miPos); 
         marcadorUsuario = new google.maps.Marker({
           position: miPos,
           map: map,
+          title: "Mi ubicación",
           icon: {
             path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
             scale: 6,
@@ -50,14 +56,31 @@ function activarRastreoGPS() {
           }
         });
       } else {
+        // Si ya existe, solo actualizamos su posición y rotación
         marcadorUsuario.setPosition(miPos);
+        if (position.coords.heading !== null) {
+            const icon = marcadorUsuario.getIcon();
+            icon.rotation = position.coords.heading;
+            marcadorUsuario.setIcon(icon);
+        }
       }
-    }, null, { enableHighAccuracy: true });
+    }, (error) => {
+        console.warn("Error de GPS: ", error.message);
+    }, { 
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0 
+    });
+  } else {
+    alert("Tu navegador no soporta geolocalización.");
   }
 }
 
 function centrarEnUsuario() {
-  if (marcadorUsuario) map.setCenter(marcadorUsuario.getPosition());
+  if (marcadorUsuario) {
+    map.setCenter(marcadorUsuario.getPosition());
+    map.setZoom(17);
+  }
 }
 
 function calcularRuta() {
@@ -86,7 +109,7 @@ function trazarRutaActual() {
 
   const blindar = (d) => `${d}, ${ciudad}, ${departamento}, ${pais}`;
 
-  const origen = blindar(salida);
+  const origen = salida ? blindar(salida) : marcadorUsuario.getPosition();
   const destino = blindar(direccionesPendientes[direccionesPendientes.length - 1]);
   const waypoints = direccionesPendientes.slice(0, -1).map(dir => ({
     location: blindar(dir),
