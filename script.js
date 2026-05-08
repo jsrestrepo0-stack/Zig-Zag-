@@ -27,6 +27,19 @@ function initMap() {
     suppressMarkers: false
   });
 
+  // AJUSTE: Escuchar cuando cambian la ciudad para mover el mapa automáticamente
+  document.getElementById('ciudad').addEventListener('change', function() {
+    const ciudadDestino = this.value;
+    const geocoder = new google.maps.Geocoder();
+
+    geocoder.geocode({ address: ciudadDestino + ", Valle del Cauca, Colombia" }, (results, status) => {
+      if (status === "OK") {
+        map.setCenter(results[0].geometry.location);
+        map.setZoom(15);
+      }
+    });
+  });
+
   activarRastreoGPS();
 }
 
@@ -38,7 +51,6 @@ function activarRastreoGPS() {
         lng: position.coords.longitude 
       };
       
-      // Centrar el mapa automáticamente la primera vez que obtiene la posición
       if (!marcadorUsuario) {
         map.setCenter(miPos); 
         marcadorUsuario = new google.maps.Marker({
@@ -56,7 +68,6 @@ function activarRastreoGPS() {
           }
         });
       } else {
-        // Si ya existe, solo actualizamos su posición y rotación
         marcadorUsuario.setPosition(miPos);
         if (position.coords.heading !== null) {
             const icon = marcadorUsuario.getIcon();
@@ -84,6 +95,7 @@ function centrarEnUsuario() {
 }
 
 function calcularRuta() {
+  // AJUSTE: Usar el ID correcto del textarea según tu código
   const textoDirecciones = document.getElementById("direcciones").value;
   direccionesPendientes = textoDirecciones.split("\n").map(l => l.trim()).filter(l => l !== "");
 
@@ -105,13 +117,17 @@ function trazarRutaActual() {
   const ciudad = document.getElementById("ciudad").value;
   const pais = document.getElementById("pais").value;
   const salida = document.getElementById("autocomplete-salida").value;
-  const departamento = "Valle del Cauca"; // Blindaje regional
+  const departamento = "Valle del Cauca"; 
 
+  // Función de blindaje para asegurar que busque en la ciudad y barrio correcto
   const blindar = (d) => `${d}, ${ciudad}, ${departamento}, ${pais}`;
 
   const origen = salida ? blindar(salida) : marcadorUsuario.getPosition();
-  const destino = blindar(direccionesPendientes[direccionesPendientes.length - 1]);
-  const waypoints = direccionesPendientes.slice(0, -1).map(dir => ({
+  
+  // Usamos el mismo punto de origen como destino para que la ruta sea circular (volver al local)
+  const destino = origen; 
+
+  const waypoints = direccionesPendientes.map(dir => ({
     location: blindar(dir),
     stopover: true
   }));
@@ -120,15 +136,42 @@ function trazarRutaActual() {
     origin: origen,
     destination: destino,
     waypoints: waypoints,
-    optimizeWaypoints: true,
+    optimizeWaypoints: true, // ORDEN CONSECUTIVO Y MÁS RÁPIDO
     travelMode: google.maps.TravelMode.DRIVING
   }, (response, status) => {
     if (status === "OK") {
       directionsRenderer.setDirections(response);
+      
+      // AJUSTE: Calcular y mostrar tiempo y distancia total
+      mostrarResumen(response);
     } else {
       alert("No pudimos trazar la ruta: " + status);
     }
   });
+}
+
+function mostrarResumen(response) {
+    const ruta = response.routes[0];
+    let tiempoSegundos = 0;
+    let distanciaMetros = 0;
+
+    ruta.legs.forEach(tramo => {
+        tiempoSegundos += tramo.duration.value;
+        distanciaMetros += tramo.distance.value;
+    });
+
+    const minutos = Math.round(tiempoSegundos / 60);
+    const kilometros = (distanciaMetros / 1000).toFixed(1);
+
+    // Buscamos un lugar donde poner la info, si no existe el panel de indicaciones lo usamos
+    const panelIndicaciones = document.getElementById("indicaciones-geometria");
+    const resumenHTML = `
+        <div style="background: #28a745; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-family: sans-serif;">
+            <p style="margin: 0;">⏱️ Tiempo estimado: <b>${minutos} min</b></p>
+            <p style="margin: 0;">🛣️ Distancia total: <b>${kilometros} km</b></p>
+        </div>
+    `;
+    panelIndicaciones.innerHTML = resumenHTML + panelIndicaciones.innerHTML;
 }
 
 function renderizarLista() {
@@ -139,7 +182,7 @@ function renderizarLista() {
     const li = document.createElement("li");
     li.innerHTML = `
       <span><b>${index + 1}.</b> ${dir}</span>
-      <button class="btn-check" onclick="marcarEntregado(${index})">✔ Entregado</button>
+      <button class="btn-check" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;" onclick="marcarEntregado(${index})">✔ Entregado</button>
     `;
     listaUL.appendChild(li);
   });
